@@ -74,11 +74,12 @@ fileIn = open(sys.argv[1], 'r')
 magic = fileIn.read(BOOT_MAGIC_SIZE)
 
 if magic != BOOT_MAGIC:
-    print "It isn't an android boot image"
+    print '[-] Android boot image check : NO\n'
     exit(1)
 
-print 'It is an android boot image'
+print '[+] Android boot image check : OK\n'
 
+print '[+] Decoding fields : OK\n'
 # decode boot img header
 bootimg_hdr.kernel_size = struct.unpack('I', fileIn.read(4))[0]
 bootimg_hdr.kernel_addr = struct.unpack('I', fileIn.read(4))[0]
@@ -101,20 +102,23 @@ bootimg_hdr.cmdline = struct.unpack('%u' % BOOT_ARGS_SIZE + 'B', fileIn.read(BOO
 bootimg_hdr.id = struct.unpack('%u' % 8 + 'I', fileIn.read(8 * sizeof(c_uint)))
 
 # show decoded fields
+print '[+] Show decoded fields :'
+print 'Id      : ' + ''.join([ '%x' % c for c in bootimg_hdr.id ])
 name = ''.join([ chr(c) for c in bootimg_hdr.name ])
-print 'Product : ' + name
+print 'Product : "' + name + '"'
 show_range('Kernel  : ', bootimg_hdr.kernel_addr, bootimg_hdr.kernel_size)
 show_range('Ramdisk : ', bootimg_hdr.ramdisk_addr, bootimg_hdr.ramdisk_size)
 show_range('Second  : ', bootimg_hdr.second_addr, bootimg_hdr.second_size)
 print 'pagesize: %u' % bootimg_hdr.page_size
 cmdline = ''.join([ chr(c) for c in bootimg_hdr.cmdline ])
-print 'Cmdline : ' + cmdline
+print 'Cmdline : "' + cmdline + '"' + '\n'
 
 # go to beginning of file
 fileIn.seek(0)
 # we skip the header
 fileIn.read(bootimg_hdr.page_size)
 
+print '[+] Calculating offsets : OK\n'
 # pagesize
 page_size = bootimg_hdr.page_size
 # get kernel
@@ -136,13 +140,17 @@ if len(sys.argv) == 3:
 # default prefix
 else:
     imgPrefix = 'dump'
+
+print '[+] File output : '
 # kernel file
 fileKernel = open(imgPrefix + '-kernel', 'w')
 fileKernel.write(kernel)
 fileKernel.close()
+print 'Wrote kernel to : ' + imgPrefix + '-kernel'
 
 # ramdisk file
 fileRamdisk = open(imgPrefix + '-ramdisk-cpio.gz', 'w')
 fileRamdisk.write(ramdisk)
 fileRamdisk.write(ramdisk)
+print 'Wrote ramdisk to : ' + imgPrefix + '-ramdisk-cpio.gz'
 
